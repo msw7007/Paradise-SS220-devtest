@@ -88,6 +88,7 @@
 #include "speech_filter/_speech_filter.dme"
 #include "redis220/_redis220.dme"
 #include "robolimbs/_robolimbs.dme"
+#include "medical/medical.dme"
 
 // --- PRIME --- //
 // #define MODPACK_MAIN_ONLY
