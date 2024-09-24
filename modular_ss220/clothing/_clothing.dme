@@ -11,3 +11,6 @@
 #include "code/shoes.dm"
 #include "code/suits.dm"
 #include "code/under.dm"
+
+#include "code/modular_undersuits.dm"
+#include "code/modular_uppersuits.dm"
