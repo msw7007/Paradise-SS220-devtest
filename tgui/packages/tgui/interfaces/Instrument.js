@@ -1,53 +1,47 @@
-import { useState } from 'inferno';
 import { round } from 'common/math';
 import { useBackend } from '../backend';
 import { Box, Button, Collapsible, Dropdown, LabeledList, Modal, Section, Slider, Stack } from '../components';
 import { Window } from '../layouts';
+const InstrumentContainer = (properties, context) => {
+  const { act, data } = useBackend(context);
+  const { playing, lines, editing } = data;
+
+  const handleAddTrack = () => {
+    act('newline', {
+      line: lines.length + 1,
+    });
+  };
+
+  const handleRemoveTrack = (lineIndex) => {
+    act('deleteline', {
+      line: lineIndex + 1,
+    });
+  };
+
+  return (
+    <Section fill scrollable title="Instrument">
+      <InstrumentStatusAdvanced />
+      <InstrumentEditor />
+      <Button disabled={!editing || playing} icon="plus" content="Add Track" onClick={handleAddTrack} />
+      {lines.map((l, i) => (
+        <Button key={i} disabled={playing} icon="trash" content="Remove Track" onClick={() => handleRemoveTrack(i)} />
+      ))}
+    </Section>
+  );
+};
+
 export const Instrument = (properties, context) => {
   const { act, data } = useBackend(context);
   return (
     <Window width={600} height={505}>
       <InstrumentHelp />
       <Window.Content>
+        <InstrumentStatus />
         <Stack fill vertical>
-          <TrackGroup />
+          <InstrumentContainer />
         </Stack>
       </Window.Content>
     </Window>
-  );
-};
-
-const TrackGroup = (properties, context) => {
-  const { act, data } = useBackend(context);
-  if (!act || !data) {
-    throw new Error('useBackend returned invalid data');
-  }
-  const [groups, setGroups] = useState([{ id: 1, status: <InstrumentStatus />, editor: <InstrumentEditor /> }]);
-
-  const handleAddGroup = () => {
-    const newGroupId = groups.length + 1;
-    setGroups([...groups, { id: newGroupId, status: <InstrumentStatus />, editor: <InstrumentEditor /> }]);
-  };
-
-  const handleDeleteGroup = (groupId) => {
-    setGroups(groups.filter((group) => group.id !== groupId));
-  };
-
-  return (
-    <Stack fill vertical>
-      {groups.map((group) => (
-        <Stack.Item key={group.id}>
-          <Section title={`Track ${group.id}`}>
-            <Stack fill vertical>
-              {group.status}
-              {group.editor}
-            </Stack>
-          </Section>
-          <Button icon="trash" content="Delete" onClick={() => handleDeleteGroup(group.id)} />
-        </Stack.Item>
-      ))}
-      <Button icon="plus" content="Add Track" onClick={handleAddGroup} />
-    </Stack>
   );
 };
 
@@ -375,15 +369,26 @@ const InstrumentStatus = (properties, context) => {
         </LabeledList.Item>
         <LabeledList.Item label="Tempo">
           <Box>
-            <Slider
-              minValue={round(600 / maxTempo)}
-              maxValue={round(600 / minTempo)}
-              value={round(600 / tempo)}
-              stepPixelSize={1}
-              format={(v) => v + ' BPM'}
-              onDrag={(_e, v) =>
-                act('setbpm', {
-                  new: v,
+            <Button
+              disabled={tempo >= maxTempo}
+              content="-"
+              as="span"
+              mr="0.5rem"
+              onClick={() =>
+                act('tempo', {
+                  new: tempo + tickLag,
+                })
+              }
+            />
+            {round(600 / tempo)} BPM
+            <Button
+              disabled={tempo <= minTempo}
+              content="+"
+              as="span"
+              ml="0.5rem"
+              onClick={() =>
+                act('tempo', {
+                  new: tempo - tickLag,
                 })
               }
             />
@@ -407,7 +412,6 @@ const InstrumentStatus = (properties, context) => {
           {ready ? <Box color="good">Ready</Box> : <Box color="bad">Instrument Definition Error!</Box>}
         </LabeledList.Item>
       </LabeledList>
-      <InstrumentStatusAdvanced />
     </Section>
   );
 };
