@@ -350,7 +350,14 @@ GLOBAL_LIST_EMPTY(fax_blacklist)
 		A.sent_by = incoming.sent_by
 		A.sent_at = incoming.sent_at
 
-		GLOB.adminfaxes += A
+		var/found_double = FALSE
+		for(var/datum/fax/admin/checkfax in GLOB.adminfaxes)
+			if(checkfax.name == A.name && checkfax.from_department == A.from_department && checkfax.to_department == A.to_department && checkfax.origin == A.origin && checkfax.sent_by == A.sent_by && checkfax.sent_at == A.sent_at)
+				found_double = TRUE
+				break
+
+		if(!found_double)
+			GLOB.adminfaxes += A
 
 	use_power(active_power_consumption)
 
