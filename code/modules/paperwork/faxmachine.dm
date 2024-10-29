@@ -297,9 +297,9 @@ GLOBAL_LIST_EMPTY(fax_blacklist)
 /obj/machinery/photocopier/faxmachine/proc/sendfax(destination, mob/sender)
 	use_power(active_power_consumption)
 	var/success = 0
+	var/datum/fax/A = new /datum/fax()
 	for(var/obj/machinery/photocopier/faxmachine/F in GLOB.allfaxes)
 		if(F.department == destination)
-			var/datum/fax/A = new /datum/fax()
 			A.name = copyitem.name
 			A.from_department = department
 			A.to_department = destination
@@ -310,6 +310,7 @@ GLOBAL_LIST_EMPTY(fax_blacklist)
 
 			success = F.receivefax(A)
 	if(success)
+		GLOB.adminfaxes += A
 		visible_message("[src] beeps, \"Message transmitted successfully.\"")
 	else
 		visible_message("[src] beeps, \"Error transmitting message.\"")
@@ -328,36 +329,14 @@ GLOBAL_LIST_EMPTY(fax_blacklist)
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/proc/print_fax(datum/fax/incoming)
-	var/obj/item/new_copy = null
 	if(istype(incoming.message, /obj/item/paper))
-		new_copy = papercopy(incoming.message)
+		papercopy(incoming.message)
 	else if(istype(incoming.message, /obj/item/photo))
-		new_copy = photocopy(incoming.message)
+		photocopy(incoming.message)
 	else if(istype(incoming.message, /obj/item/paper_bundle))
-		new_copy = bundlecopy(incoming.message)
+		bundlecopy(incoming.message)
 	else
 		return
-
-	// Store the fax that was received in the admin room in adminfaxes
-	// Fixes issue where deleting the original would make it unreadable in the admin panel
-	if(istype(incoming, /datum/fax/admin))
-		var/datum/fax/admin/A = new /datum/fax/admin()
-		A.name = new_copy.name
-		A.from_department = incoming.from_department
-		A.to_department = incoming.to_department
-		A.origin = incoming.origin
-		A.message = new_copy
-		A.sent_by = incoming.sent_by
-		A.sent_at = incoming.sent_at
-
-		var/found_double = FALSE
-		for(var/datum/fax/admin/checkfax in GLOB.adminfaxes)
-			if(checkfax.name == A.name && checkfax.from_department == A.from_department && checkfax.to_department == A.to_department && checkfax.origin == A.origin && checkfax.sent_by == A.sent_by && checkfax.sent_at == A.sent_at)
-				found_double = TRUE
-				break
-
-		if(!found_double)
-			GLOB.adminfaxes += A
 
 	use_power(active_power_consumption)
 
@@ -410,6 +389,7 @@ GLOBAL_LIST_EMPTY(fax_blacklist)
 	for(var/obj/machinery/photocopier/faxmachine/F in GLOB.allfaxes)
 		if(F.department == destination)
 			F.receivefax(A)
+	GLOB.adminfaxes += A
 	visible_message("[src] beeps, \"Message transmitted successfully.\"")
 	log_fax(sender, destination)
 
